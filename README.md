@@ -1,63 +1,18 @@
-# Anomaly_Detection
 
-<a target="_blank" href="https://cookiecutter-data-science.drivendata.org/">
-    <img src="https://img.shields.io/badge/CCDS-Project%20template-328F97?logo=cookiecutter" />
-</a>
+# Anomaly Detection With Supervised/Unsupervised Machine Learning.
 
-Anomaly Detection with Supervised/Unsupervised Machine Learning
+1. Anomaly detection in time series data involves identifying unexpected patterns that do not conform to the expected behavior.
+2. Time series data has an inherent temporal ordering, which makes anomaly detection more challenging but also provides additional contextual information. 
+3. Both supervised and unsupervised machine learning approaches has been applied to time series anomaly detection.
 
-## Project Organization
 
-```
-├── LICENSE            <- Open-source license if one is chosen
-├── Makefile           <- Makefile with convenience commands like `make data` or `make train`
-├── README.md          <- The top-level README for developers using this project.
-├── data
-│   ├── external       <- Data from third party sources.
-│   ├── interim        <- Intermediate data that has been transformed.
-│   ├── processed      <- The final, canonical data sets for modeling.
-│   └── raw            <- The original, immutable data dump.
-│
-├── docs               <- A default mkdocs project; see mkdocs.org for details
-│
-├── models             <- Trained and serialized models, model predictions, or model summaries
-│
-├── notebooks          <- Jupyter notebooks. Naming convention is a number (for ordering),
-│                         the creator's initials, and a short `-` delimited description, e.g.
-│                         `1.0-jqp-initial-data-exploration`.
-│
-├── pyproject.toml     <- Project configuration file with package metadata for anomaly_detection
-│                         and configuration for tools like black
-│
-├── references         <- Data dictionaries, manuals, and all other explanatory materials.
-│
-├── reports            <- Generated analysis as HTML, PDF, LaTeX, etc.
-│   └── figures        <- Generated graphics and figures to be used in reporting
-│
-├── requirements.txt   <- The requirements file for reproducing the analysis environment, e.g.
-│                         generated with `pip freeze > requirements.txt`
-│
-├── setup.cfg          <- Configuration file for flake8
-│
-└── anomaly_detection                <- Source code for use in this project.
-    │
-    ├── __init__.py    <- Makes anomaly_detection a Python module
-    │
-    ├── data           <- Scripts to download or generate data
-    │   └── make_dataset.py
-    │
-    ├── features       <- Scripts to turn raw data into features for modeling
-    │   └── build_features.py
-    │
-    ├── models         <- Scripts to train models and then use trained models to make
-    │   │                 predictions
-    │   ├── predict_model.py
-    │   └── train_model.py
-    │
-    └── visualization  <- Scripts to create exploratory and results oriented visualizations
-        └── visualize.py
-```
+## 🛠 Skills
+Tslab - Anomaly Detection
+Python - Scikit-Learn, Matplotlib,Pandas,Numpy
 
---------
 
-# Anomaly_Detection
+## Lessons Learned
+
+1. Understanding Temporal Dependencies: I gained a deeper understanding of how time series data's inherent temporal structure influences model selection and feature engineering.
+2. Feature Engineering Importance: I learned the critical role of feature engineering, such as creating lag features and handling seasonality, in improving model performance.
+3. Threshold Setting for Unsupervised Methods: I realized the importance of setting appropriate thresholds for anomaly scores to balance false positives and false negatives.
