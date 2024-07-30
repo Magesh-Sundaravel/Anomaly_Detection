@@ -134,13 +134,18 @@ celerybeat.pid
 # Environments
 .env
 .venv
-.virtual_documents
-.jupyter
 env/
 venv/
 ENV/
 env.bak/
 venv.bak/
+
+
+# Ignore the .jupyter directory
+/media/magesh/HardDisk/Thesis/anomaly_detection/.jupyter
+
+# Ignore the .virtual_documents directory
+/media/magesh/HardDisk/Thesis/anomaly_detection/.virtual_documents
 
 
 # Spyder project settings
