@@ -46,9 +46,8 @@ class MachineLearning:
                              'std_anomaly_ws5', 'std_anomaly_ws10', 'std_anomaly_ws15',
                              'iqr_anomaly_ws5', 'iqr_anomaly_ws10', 'iqr_anomaly_ws15', 'Anomaly']
             data = data[columns_order]
-            X = data.drop("Anomaly", axis=1)
-            y = data["Anomaly"]
-            processed_data[file] = (X, y)
+            
+            processed_data[file] = data
         return processed_data
 
 
@@ -58,38 +57,21 @@ class SupportVectorMachine(MachineLearning):
 
     def train_test_split(self):
         processed_data = self.preprocess_data()
-        for file, (X, y) in processed_data.items():
-            X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=101)
-            #  Define the parameter grid for grid search
-            param_grid = {
-                'svc__C': [0.1, 1, 10],
-                'svc__gamma': [0.1, 1, 10, 'scale', 'auto'],
-                'svc__kernel': ['linear', 'rbf']
-            }
+        for file, data in processed_data.items():
+            np.random.seed(42)
 
-            # Create pipeline with SVC
-            pipeline = Pipeline([('svc', SVC(random_state=101))])
 
-            # Initialize GridSearchCV
-            randomized_search = RandomizedSearchCV(pipeline, param_grid, cv=5, n_jobs=-1)
+            X = data.drop('Anomaly',axis = 1 )
+            y = data.Anomaly
 
-            # Perform Grid Search
-            randomized_search.fit(X_train, y_train)
+            X_train, X_test, y_train, y_test = train_test_split(X,y,test_size=0.3,stratify=y)
 
-            # Get the best parameters
-            best_params = randomized_search.best_params_
-            print("Best parameters:", best_params)
+            svc_clf = SVC()
+            svc_clf.fit(X_train,y_train)
 
-            # Use the best parameters to instantiate the SVC model
-            best_svc = randomized_search.best_estimator_
-            best_svc.fit(X_train, y_train)
+            print(f'SVC: {svc_clf.score(X_test,y_test)}')
+            
 
-            # Make predictions
-            y_pred_svm = best_svc.predict(X_test)
-
-            # # Print classification report
-            # print("Classification Report:")
-            # print(classification_report(y_test, y_pred_svm))
 
 class RandomForest(MachineLearning):
     def __init__(self, statistical_features_dir):
@@ -97,42 +79,19 @@ class RandomForest(MachineLearning):
 
     def train_test_split(self):
         processed_data = self.preprocess_data()
-        for file, (X, y) in processed_data.items():
-            X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=101)
-
-             # Define the parameter grid for grid search
-            param_grid = {
-                'n_estimators': [100, 200, 300],
-                'max_depth': [None, 10, 20]           
-            }
-
-            # Initialize Random Forest classifier
-            clf = RandomForestClassifier(random_state=101)
-
-            # Initialize GridSearchCV
-            randomized_search = RandomizedSearchCV(clf, param_grid, cv=5, n_jobs=-1)
-
-            # Perform Grid Search
-            randomized_search.fit(X_train, y_train)
-
-            # Get the best parameters
-            best_params = randomized_search.best_params_
-            print("Best parameters:", best_params)
-
-            # Use the best parameters to instantiate the Random Forest model
-            best_rf = randomized_search.best_estimator_
-
-            # Fit the model
-            best_rf.fit(X_train, y_train)
-
-            # Make predictions
-            y_pred_rf = best_rf.predict(X_test)
-
-            # # Print classification report
-            # print("Classification Report:")
-            # print(classification_report(y_test, y_pred_rf))
+        for file, data in processed_data.items():
+            np.random.seed(42)
 
 
+            X = data.drop('Anomaly',axis = 1 )
+            y = data.Anomaly
+
+            X_train, X_test, y_train, y_test = train_test_split(X,y ,test_size=0.3,stratify=y)
+            rf_clf = RandomForestClassifier()
+            rf_clf.fit(X_train,y_train)
+
+            print(f'Random Forest : {rf_clf.score(X_test,y_test)}')
+            
 
 def supervised_ml(statistical_features_dir):
     svm_classifier = SupportVectorMachine(statistical_features_dir)
@@ -141,7 +100,7 @@ def supervised_ml(statistical_features_dir):
     rf_classifier.train_test_split()
 
 def main():
-    statistical_features_dir = "/media/magesh/HardDisk/Thesis/anomaly_detection/data/processed/statistical_features"
+    statistical_features_dir = "/media/magesh/HardDisk/Thesis/anomaly_detection/data/processed/ml_data"
     supervised_ml(statistical_features_dir)
 
 if __name__ == "__main__":

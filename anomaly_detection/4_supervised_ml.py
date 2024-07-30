@@ -46,9 +46,8 @@ class MachineLearning:
                              'std_anomaly_ws5', 'std_anomaly_ws10', 'std_anomaly_ws15',
                              'iqr_anomaly_ws5', 'iqr_anomaly_ws10', 'iqr_anomaly_ws15', 'Anomaly']
             data = data[columns_order]
-            X = data.drop("Anomaly", axis=1)
-            y = data["Anomaly"]
-            processed_data[file] = (X, y, original_data)
+
+            processed_data[file] = (data, original_data)
         return processed_data
 
 
@@ -58,7 +57,9 @@ class SupportVectorMachine(MachineLearning):
 
     def train_test_split(self):
         processed_data = self.preprocess_data()
-        for file, (X, y, original_data) in processed_data.items():
+        for file, (data, original_data) in processed_data.items():
+            X = data.drop('Anomaly',axis = 1)
+            y = data.Anomaly
             X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=101)
             pipeline = Pipeline([('svc', SVC(C=10, kernel='rbf',gamma=0.1,random_state=101))])
             svc = pipeline.fit(X_train, y_train)
@@ -78,7 +79,9 @@ class RandomForest(MachineLearning):
     def train_test_split(self):
         processed_data = self.preprocess_data()
 
-        for file, (X, y, original_data) in processed_data.items():
+        for file, (data, original_data) in processed_data.items():
+            X = data.drop('Anomaly',axis = 1)
+            y = data.Anomaly
             X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=101)
             clf = RandomForestClassifier(n_estimators=200,max_depth=20, random_state=101)
             rf = clf.fit(X_train, y_train)
