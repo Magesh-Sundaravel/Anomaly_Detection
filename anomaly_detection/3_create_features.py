@@ -26,15 +26,16 @@ class StepDetector:
             os.makedirs(self.statistical_statistical_features_dir, exist_ok=True)
             for window_size in self.window_sizes:
                 anomalies_indices = []
-                for i in range(0, len(data) - window_size + 1, self.stride):
+                for i in range(0, len(data) - window_size + 1, self.stride): # 0,2356,3
                     window_data = data[column_name][i:i + window_size].copy()
-                    rate_of_change = np.abs(window_data.iloc[-1] - window_data.iloc[0])
-                    if rate_of_change > 1000:
-                        anomalies_indices.append(i)
-                data[f'step_variable_ws{window_size}'] = 0
-                data.loc[anomalies_indices, f'step_variable_ws{window_size}'] = 1
-            output_file_path = os.path.join(self.statistical_statistical_features_dir, file)
-            data.to_csv(output_file_path, index=False)
+                    print(window_data)
+        #             rate_of_change = np.abs(window_data.iloc[-1] - window_data.iloc[0])
+        #             if rate_of_change > 1000:
+        #                 anomalies_indices.append(i)
+        #         data[f'step_variable_ws{window_size}'] = 0
+        #         data.loc[anomalies_indices, f'step_variable_ws{window_size}'] = 1
+        #     output_file_path = os.path.join(self.statistical_statistical_features_dir, file)
+        #     data.to_csv(output_file_path, index=False)
 
 
 class MeanAndStandardDeviation:
@@ -100,11 +101,11 @@ class InterQuartileRange:
 def unsupervised_ml(synthetic_data_dir, statistical_statistical_features_dir):
     step_detector = StepDetector(synthetic_data_dir, statistical_statistical_features_dir)
     step_detector.step_signal_feature()
-    mean_std = MeanAndStandardDeviation(statistical_statistical_features_dir)
-    mean_std.detect_and_evaluate()
-    iqr = InterQuartileRange(statistical_statistical_features_dir)
-    iqr.detect_and_evaluate_iqr()
-    print("All files have been updated with Unsupervised Machine Learning Labels")
+    # mean_std = MeanAndStandardDeviation(statistical_statistical_features_dir)
+    # mean_std.detect_and_evaluate()
+    # iqr = InterQuartileRange(statistical_statistical_features_dir)
+    # iqr.detect_and_evaluate_iqr()
+    # print("All files have been updated with Unsupervised Machine Learning Labels")
 
 
 def main():

@@ -19,9 +19,10 @@ def separate_sensors(file_dir, sensor_dir):
     for i in range(1, len(data.columns)):
         second_column = data.iloc[:, i]
         sensor_data = pd.concat([first_column, second_column], axis=1)
+        print(sensor_data)
 
-        output_path_dir = os.path.join(sensor_dir, f'{data.columns[i]}.csv')
-        sensor_data.to_csv(output_path_dir, index=False)
+        # output_path_dir = os.path.join(sensor_dir, f'{data.columns[i]}.csv')
+        # sensor_data.to_csv(output_path_dir, index=False)
 
     print("CSV files have been successfully separated and saved.")
 
@@ -64,9 +65,9 @@ def reconstruct_columns(tslab_dir):
         else:
             data['Anomaly'] = 0
 
-        # Save the updated DataFrame to a new file
-        output_path = os.path.join(tslab_dir, file)
-        data.to_csv(output_path, index=False)
+        # # Save the updated DataFrame to a new file
+        # output_path = os.path.join(tslab_dir, file)
+        # data.to_csv(output_path, index=False)
     
     print("All the columns have been Reconstructed")
         
