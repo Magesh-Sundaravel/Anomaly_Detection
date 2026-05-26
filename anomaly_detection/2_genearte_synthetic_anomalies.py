@@ -3,7 +3,9 @@ import numpy as np
 import pandas as pd
 
 import warnings
-warnings.filterwarnings('ignore')
+warnings.filterwarnings("ignore")
+
+from anomaly_detection.config import Config
 
 
 
@@ -44,7 +46,7 @@ class SyntheticAnomalyGenerator:
                     anomaly_magnitude = np.random.uniform(self.y_min, self.y_max)
                     anomaly_duration = int(np.random.uniform(self.d_min, self.d_max))
 
-                    for j in range(anomaly_start_point, min(anomaly_start_point + anomaly_duration, len(original_signal))):
+                    for j in range(anomaly_start_point, min(anomaly_start_point + anomaly_duration, len(original_signal))): 
                         original_signal.iloc[j] += anomaly_magnitude
                         anomaly_indices.append(j)
                     current_point = anomaly_start_point
@@ -61,13 +63,22 @@ class SyntheticAnomalyGenerator:
         print(f"Synthetic anomalies generated and saved for all the files.")
 
 
-if __name__ == '__main__':
-    tslab_dir = "/media/magesh/HardDisk/Thesis/anomaly_detection/data/processed/tslab_anomalies"
-    synthetic_data_dir = "/media/magesh/HardDisk/Thesis/anomaly_detection/data/processed/synthetic_data"
+def run():
+    Config.SYNTHETIC_DIR.mkdir(parents=True, exist_ok=True)
+    generator = SyntheticAnomalyGenerator(
+        Config.TSLAB_DIR, Config.SYNTHETIC_DIR,
+        num_anomalies=Config.NUM_ANOMALIES,
+        x_min=Config.X_MIN, x_max=Config.X_MAX,
+        y_min=Config.Y_MIN, y_max=Config.Y_MAX,
+        d_min=Config.D_MIN, d_max=Config.D_MAX,
+    )
+    generator.read_data()
+    generator.generate_synthetic_anomaly()
 
-    if not os.path.exists(synthetic_data_dir):
-        os.makedirs(synthetic_data_dir)
 
-    synthetic_anomaly = SyntheticAnomalyGenerator(tslab_dir, synthetic_data_dir)
-    synthetic_anomaly.read_data()
-    synthetic_anomaly.generate_synthetic_anomaly()
+def main():
+    run()
+
+
+if __name__ == "__main__":
+    main()

@@ -1,9 +1,9 @@
-# Description: This script is used to impute synthetic anomalies in the dataset.
-
 import os
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+
+from anomaly_detection.config import Config
 
 
 class AnomalyImputer:
@@ -89,19 +89,20 @@ class AnomalyImputer:
             plot_file_path = os.path.join(self.imputed_vs_original_dir, f'imputed_vs_original_anomalies_plot{file_name}.png')
             plt.savefig(plot_file_path, dpi=100)
 
+def run():
+    imputer = AnomalyImputer(
+        str(Config.ML_DATA_DIR),
+        str(Config.IMPUTED_DIR),
+        str(Config.IMPUTED_PLOTS_DIR),
+    )
+    imputer.impute_and_detect_anomalies()
+    imputer.plot_anomalies()
+    print("All files have been updated with imputed data and saved with plots")
+
+
+def main():
+    run()
+
+
 if __name__ == "__main__":
-    ml_evaluation_dir = "/media/magesh/HardDisk/Thesis/anomaly_detection/data/processed/ml_data"
-    imputed_anomalies_path = "/media/magesh/HardDisk/Thesis/anomaly_detection/data/processed/"
-
-    anomalies_dir_name = "Imputed_anomalies"
-    imputed_anomalies_dir = os.path.join(imputed_anomalies_path, anomalies_dir_name)
-
-    imputed_vs_original  = "Imputed_vs_original_anomalies_plot"
-    imputed_vs_original_dir = os.path.join(imputed_anomalies_path,imputed_vs_original)
-
-    impute_anomalies = AnomalyImputer(ml_evaluation_dir,  imputed_anomalies_dir,imputed_vs_original_dir)
-    impute_anomalies.impute_and_detect_anomalies()
-
-    # impute_anomalies.plot_anomalies()
-
-    print(f'All the files have been updated with imputed data and saved with plots')
+    main()

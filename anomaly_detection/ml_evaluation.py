@@ -1,108 +1,168 @@
 import os
-import numpy as np
-import pandas as pd
+import matplotlib
+matplotlib.use("Agg")
+import matplotlib.pyplot as plt
+import seaborn as sns
 
-
-from sklearn.pipeline import Pipeline
-from sklearn.model_selection import train_test_split,RandomizedSearchCV
-from sklearn.preprocessing import RobustScaler
+from sklearn.model_selection import (
+    train_test_split, StratifiedKFold, RandomizedSearchCV, cross_val_score,
+)
 from sklearn.svm import SVC
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.metrics import accuracy_score,classification_report
+from sklearn.metrics import classification_report, confusion_matrix
 
+from anomaly_detection.base import MachineLearning
+from anomaly_detection.config import Config
 
 import warnings
+warnings.filterwarnings("ignore")
 
-warnings.filterwarnings('ignore')
 
-
-class MachineLearning:
-    def __init__(self, statistical_features_dir):
-        self.statistical_features_dir = statistical_features_dir
-
-    def load_data(self):
-        csv_files = [file for file in os.listdir(self.statistical_features_dir) if file.endswith(".csv")]
-        return {file: pd.read_csv(os.path.join(self.statistical_features_dir, file)) for file in csv_files}
-
-    def preprocess_data(self):
-        data_dict = self.load_data()
-        processed_data = {}
-        scaler = RobustScaler()
-
-        for file, data in data_dict.items():
-            column_name  = data.columns[2]
-            data['Timestamp'] = pd.to_datetime(data['Timestamp'], dayfirst=True)
-            data['Day'] = data['Timestamp'].dt.day
-            data['Month'] = data['Timestamp'].dt.month
-            data['Year'] = data['Timestamp'].dt.year
-            data['Hour'] = data['Timestamp'].dt.hour
-            data['Minute'] = data['Timestamp'].dt.minute
-
-            data['original_signal'] = scaler.fit_transform(data['original_signal'].values.reshape(-1, 1))
-            data[column_name] = scaler.fit_transform(data[column_name].values.reshape(-1,1))
-
-            columns_order = ['Day', 'Month', 'Year', 'Hour', 'Minute', 'original_signal', column_name,
-                             'step_variable_ws5', 'step_variable_ws10', 'step_variable_ws15',
-                             'std_anomaly_ws5', 'std_anomaly_ws10', 'std_anomaly_ws15',
-                             'iqr_anomaly_ws5', 'iqr_anomaly_ws10', 'iqr_anomaly_ws15', 'Anomaly']
-            data = data[columns_order]
-            
-            processed_data[file] = data
-        return processed_data
+def _save_confusion_matrix(cm, model_name, output_dir, file_stem):
+    os.makedirs(output_dir, exist_ok=True)
+    fig, ax = plt.subplots(figsize=(5, 4))
+    sns.heatmap(
+        cm, annot=True, fmt="d", cmap="Blues", ax=ax,
+        xticklabels=["Normal", "Anomaly"],
+        yticklabels=["Normal", "Anomaly"],
+    )
+    ax.set_xlabel("Predicted")
+    ax.set_ylabel("Actual")
+    ax.set_title(f"{model_name} — Confusion Matrix\n{file_stem}")
+    plt.tight_layout()
+    plt.savefig(os.path.join(output_dir, f"cm_{model_name}_{file_stem}.png"), dpi=100)
+    plt.close()
 
 
 class SupportVectorMachine(MachineLearning):
     def __init__(self, statistical_features_dir):
         super().__init__(statistical_features_dir)
 
-    def train_test_split(self):
+    def evaluate(self, tune_hyperparams=False):
         processed_data = self.preprocess_data()
-        for file, data in processed_data.items():
-            np.random.seed(42)
+        cm_dir = str(Config.METRICS_DIR / "confusion_matrices")
 
+        for file, (data, _) in processed_data.items():
+            file_stem = file.replace(".csv", "")
+            X = data.drop("Anomaly", axis=1)
+            y = data["Anomaly"]
 
-            X = data.drop('Anomaly',axis = 1 )
-            y = data.Anomaly
+            X_train, X_test, y_train, y_test = train_test_split(
+                X, y, test_size=Config.EVAL_TEST_SIZE,
+                stratify=y, random_state=Config.RANDOM_STATE,
+            )
 
-            X_train, X_test, y_train, y_test = train_test_split(X,y,test_size=0.3,stratify=y)
+            if tune_hyperparams:
+                param_dist = {
+                    "C": [0.1, 1, 10, 100],
+                    "kernel": ["rbf", "linear"],
+                    "gamma": ["scale", "auto", 0.01, 0.1],
+                }
+                search = RandomizedSearchCV(
+                    SVC(), param_distributions=param_dist,
+                    n_iter=10, cv=3, scoring="f1", random_state=Config.RANDOM_STATE,
+                )
+                search.fit(X_train, y_train)
+                clf = search.best_estimator_
+                print(f"SVM best params ({file_stem}): {search.best_params_}")
+            else:
+                clf = SVC(
+                    C=Config.SVM_C, kernel=Config.SVM_KERNEL,
+                    gamma=Config.SVM_GAMMA, random_state=Config.SVM_RANDOM_STATE,
+                )
+                clf.fit(X_train, y_train)
 
-            svc_clf = SVC()
-            svc_clf.fit(X_train,y_train)
+            y_pred = clf.predict(X_test)
+            print(f"\n=== SVM — {file_stem} ===")
+            print(classification_report(y_test, y_pred, target_names=["Normal", "Anomaly"]))
 
-            print(f'SVC: {svc_clf.score(X_test,y_test)}')
-            
+            cv = StratifiedKFold(
+                n_splits=Config.CV_FOLDS, shuffle=True, random_state=Config.RANDOM_STATE
+            )
+            cv_scores = cross_val_score(clf, X, y, cv=cv, scoring="f1", n_jobs=1)
+            print(
+                f"Cross-val F1 ({Config.CV_FOLDS}-fold): "
+                f"{cv_scores.mean():.3f} ± {cv_scores.std():.3f}"
+            )
+
+            _save_confusion_matrix(confusion_matrix(y_test, y_pred), "SVM", cm_dir, file_stem)
 
 
 class RandomForest(MachineLearning):
     def __init__(self, statistical_features_dir):
         super().__init__(statistical_features_dir)
 
-    def train_test_split(self):
+    def evaluate(self, tune_hyperparams=False):
         processed_data = self.preprocess_data()
-        for file, data in processed_data.items():
-            np.random.seed(42)
+        cm_dir = str(Config.METRICS_DIR / "confusion_matrices")
+
+        for file, (data, _) in processed_data.items():
+            file_stem = file.replace(".csv", "")
+            X = data.drop("Anomaly", axis=1)
+            y = data["Anomaly"]
+
+            X_train, X_test, y_train, y_test = train_test_split(
+                X, y, test_size=Config.EVAL_TEST_SIZE,
+                stratify=y, random_state=Config.RANDOM_STATE,
+            )
+
+            if tune_hyperparams:
+                param_dist = {
+                    "n_estimators": [50, 100, 200],
+                    "max_depth": [5, 10, 20, None],
+                    "min_samples_split": [2, 5, 10],
+                }
+                search = RandomizedSearchCV(
+                    RandomForestClassifier(random_state=Config.RF_RANDOM_STATE),
+                    param_distributions=param_dist,
+                    n_iter=10, cv=3, scoring="f1", random_state=Config.RANDOM_STATE,
+                )
+                search.fit(X_train, y_train)
+                clf = search.best_estimator_
+                print(f"RF best params ({file_stem}): {search.best_params_}")
+            else:
+                clf = RandomForestClassifier(
+                    n_estimators=Config.RF_N_ESTIMATORS,
+                    max_depth=Config.RF_MAX_DEPTH,
+                    random_state=Config.RF_RANDOM_STATE,
+                )
+                clf.fit(X_train, y_train)
+
+            y_pred = clf.predict(X_test)
+            print(f"\n=== Random Forest — {file_stem} ===")
+            print(classification_report(y_test, y_pred, target_names=["Normal", "Anomaly"]))
+
+            cv = StratifiedKFold(
+                n_splits=Config.CV_FOLDS, shuffle=True, random_state=Config.RANDOM_STATE
+            )
+            cv_scores = cross_val_score(clf, X, y, cv=cv, scoring="f1", n_jobs=1)
+            print(
+                f"Cross-val F1 ({Config.CV_FOLDS}-fold): "
+                f"{cv_scores.mean():.3f} ± {cv_scores.std():.3f}"
+            )
+
+            _save_confusion_matrix(confusion_matrix(y_test, y_pred), "RF", cm_dir, file_stem)
 
 
-            X = data.drop('Anomaly',axis = 1 )
-            y = data.Anomaly
+def evaluate(statistical_features_dir, tune_hyperparams=False):
+    SupportVectorMachine(statistical_features_dir).evaluate(tune_hyperparams)
+    RandomForest(statistical_features_dir).evaluate(tune_hyperparams)
 
-            X_train, X_test, y_train, y_test = train_test_split(X,y ,test_size=0.3,stratify=y)
-            rf_clf = RandomForestClassifier()
-            rf_clf.fit(X_train,y_train)
 
-            print(f'Random Forest : {rf_clf.score(X_test,y_test)}')
-            
+def run():
+    evaluate(Config.ML_DATA_DIR)
 
-def supervised_ml(statistical_features_dir):
-    svm_classifier = SupportVectorMachine(statistical_features_dir)
-    svm_classifier.train_test_split()
-    rf_classifier = RandomForest(statistical_features_dir)
-    rf_classifier.train_test_split()
 
 def main():
-    statistical_features_dir = "/media/magesh/HardDisk/Thesis/anomaly_detection/data/processed/ml_data"
-    supervised_ml(statistical_features_dir)
+    import argparse
+    parser = argparse.ArgumentParser(description="Evaluate anomaly detection models")
+    parser.add_argument(
+        "--tune", action="store_true",
+        help="Run RandomizedSearchCV hyperparameter tuning before evaluating",
+    )
+    args = parser.parse_args()
+    evaluate(Config.ML_DATA_DIR, tune_hyperparams=args.tune)
+
 
 if __name__ == "__main__":
     main()
-    

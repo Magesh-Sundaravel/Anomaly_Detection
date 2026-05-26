@@ -4,9 +4,10 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-
 import warnings
 warnings.filterwarnings("ignore")
+
+from anomaly_detection.config import Config
 
 
 class PlotAnomalies:
@@ -67,15 +68,16 @@ class PlotAnomalies:
         plt.savefig(plot_file_path)
 
 
-def main():
-    ml_data_dir = "/media/magesh/HardDisk/Thesis/anomaly_detection/data/processed/ml_data"
-    metrics_dir = "/media/magesh/HardDisk/Thesis/anomaly_detection/reports/metrics"
+def run():
+    ml_data_dir = str(Config.ML_DATA_DIR)
+    metrics_dir = str(Config.METRICS_DIR)
+    file_names = [f for f in os.listdir(ml_data_dir) if f.endswith(".csv")]
+    plotter = PlotAnomalies(ml_data_dir, metrics_dir)
+    plotter.load_csv(file_names)
 
-    file_names = [file_name for file_name in os.listdir(ml_data_dir) if file_name.endswith('.csv')]
-    
-    plot_anomalies = PlotAnomalies(ml_data_dir,metrics_dir)
-    plot_anomalies.load_csv(file_names)
-    plot_anomalies.plot_all()
+
+def main():
+    run()
 
 
 if __name__ == "__main__":
